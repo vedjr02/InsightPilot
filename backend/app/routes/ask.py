@@ -12,6 +12,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.agent import run_agent
+from app.llm import friendly_error_message
 from app.services.datasets import get_dataset
 
 router = APIRouter(prefix="/ask", tags=["ask"])
@@ -63,10 +64,7 @@ def ask_stream(body: AskRequest) -> StreamingResponse:
                         "result",
                         {
                             "ok": False,
-                            "insight": (
-                                "Something went wrong while analyzing that — "
-                                f"please try again. ({exc})"
-                            ),
+                            "insight": friendly_error_message(exc),
                             "trace": [],
                             "chart": {
                                 "chart_type": "empty",
@@ -78,6 +76,7 @@ def ask_stream(body: AskRequest) -> StreamingResponse:
                             "rows": [],
                             "row_count": 0,
                             "question": question,
+                            "error": friendly_error_message(exc),
                         },
                     )
                 )

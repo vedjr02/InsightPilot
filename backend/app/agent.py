@@ -10,6 +10,7 @@ from app.intent import (
     refuse_reply,
     schema_terms_from_profile,
 )
+from app.llm import LLMBusyError, friendly_error_message
 from app.tools.choose_chart_type import choose_chart_type
 from app.tools.execute_query import execute_query
 from app.tools.generate_sql import generate_sql
@@ -145,6 +146,9 @@ def run_agent(
 
         try:
             gen = generate_sql(question, profile, prior_error=prior_error)
+        except LLMBusyError as exc:
+            add_trace("generate_sql", str(exc), attempt=attempt, ok=False)
+            return _error_response(question, friendly_error_message(exc), trace)
         except Exception as exc:  # noqa: BLE001
             prior_error = str(exc)
             add_trace("generate_sql", f"Model error: {exc}", attempt=attempt, ok=False)
@@ -231,13 +235,36 @@ def run_agent(
 
     # 6. Insight
     status("Writing insight…")
-    insight = write_insight(
-        question,
-        result["columns"],
-        result["rows"],
-        chart_type=chart["chart_type"],
-    )
-    add_trace("write_insight", "Drafted plain-English answer")
+    try:
+        insight = write_insight(
+            question,
+            result["columns"],
+            result["rows"],
+            chart_type=chart["chart_type"],
+        )
+        add_trace("write_insight", "Drafted plain-English answer")
+    except LLMBusyError as exc:
+        # Keep SQL + chart; fall back to a plain summary if the model is busy.
+        add_trace("write_insight", friendly_error_message(exc), ok=False)
+        insight = {
+            "insight": (
+                f"Here’s what the data shows for “{question}” "
+                f"({result['row_count']} row(s)). "
+                "The AI writer is busy, so this is a short summary — "
+                "retry in a few seconds for a fuller explanation."
+            ),
+            "empty": result["row_count"] == 0,
+        }
+    except Exception as exc:  # noqa: BLE001
+        add_trace("write_insight", f"Model error: {exc}", ok=False)
+        insight = {
+            "insight": (
+                f"Query returned {result['row_count']} row(s). "
+                "I couldn’t draft a full narrative — see the chart and "
+                "“Run this SQL yourself” for details."
+            ),
+            "empty": result["row_count"] == 0,
+        }
 
     status("Done")
     return {
