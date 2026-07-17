@@ -20,6 +20,15 @@ app.add_middleware(
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    """Liveness check used by the frontend connection probe."""
-    return {"status": "ok"}
+def health() -> dict:
+    """Liveness check used by the frontend connection probe.
+
+    Includes a lightweight DB ping so we catch connection issues early.
+    """
+    from app.db import check_connection
+
+    try:
+        db = check_connection()
+        return {"status": "ok", "database": "connected", "db": db}
+    except Exception as exc:  # noqa: BLE001 — surface reason to local ops only
+        return {"status": "degraded", "database": "error", "detail": str(exc)}
