@@ -1,7 +1,7 @@
 "use client";
 
-import { useReducedMotion, motion } from "framer-motion";
-import { useId, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useId, useState } from "react";
 
 import type { TraceStep } from "@/lib/types";
 
@@ -17,30 +17,47 @@ const TOOL_LABELS: Record<string, string> = {
   execute_query: "Ran the query",
   choose_chart_type: "Chose a chart",
   write_insight: "Wrote the answer",
-  self_correct: "Self-corrected",
+  self_correct: "Tried a different approach",
 };
 
 export function ReasoningTrace({
   steps,
-  defaultOpen = false,
+  defaultOpen,
 }: ReasoningTraceProps) {
-  const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
   const reduce = useReducedMotion();
+  const [open, setOpen] = useState(false);
+
+  // Collapse by default on small screens
+  useEffect(() => {
+    if (typeof defaultOpen === "boolean") {
+      setOpen(defaultOpen);
+      return;
+    }
+    const mq = window.matchMedia("(min-width: 640px)");
+    setOpen(mq.matches);
+  }, [defaultOpen]);
 
   if (!steps.length) return null;
 
+  const selfCorrected = steps.some((s) => s.tool === "self_correct");
+
   return (
-    <div className="mt-3 border-t border-border pt-3">
+    <div className="mt-6 border-t border-border pt-4">
       <button
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between rounded-md px-1 py-1 text-left text-sm text-muted transition-colors hover:text-foreground"
+        className="flex w-full items-baseline justify-between gap-4 text-left"
       >
-        <span>How I got this answer</span>
-        <span className="text-xs tabular-nums">{open ? "Hide" : "Show"}</span>
+        <span className="text-caption text-muted transition-colors hover:text-foreground">
+          How I got this answer
+          {selfCorrected ? " · corrected itself" : ""}
+        </span>
+        <span className="text-caption tabular-nums text-muted">
+          {open ? "Hide" : `${steps.length} steps`}
+        </span>
       </button>
 
       <motion.div
@@ -57,22 +74,35 @@ export function ReasoningTrace({
         }
         className="overflow-hidden"
       >
-        <ol className="mt-2 space-y-2 border-l border-border pl-4">
-          {steps.map((step, i) => (
-            <li key={`${step.tool}-${i}`} className="text-sm">
-              <p
-                className={
-                  step.tool === "self_correct"
-                    ? "font-medium text-accent"
-                    : "font-medium text-foreground"
-                }
-              >
-                {TOOL_LABELS[step.tool] ?? step.tool}
-                {step.ok === false ? " — needed a fix" : ""}
-              </p>
-              <p className="mt-0.5 text-muted">{step.detail}</p>
-            </li>
-          ))}
+        <ol className="relative mt-4 space-y-4 border-l border-border pl-5">
+          {steps.map((step, i) => {
+            const isCorrect = step.tool === "self_correct";
+            return (
+              <li key={`${step.tool}-${i}`} className="relative">
+                <span
+                  aria-hidden
+                  className={`absolute -left-[1.4rem] top-1.5 h-2 w-2 rounded-full ${
+                    isCorrect || step.ok === false
+                      ? "bg-accent"
+                      : "bg-border-strong"
+                  }`}
+                />
+                <p
+                  className={
+                    isCorrect
+                      ? "text-sm font-medium text-accent"
+                      : "text-sm font-medium text-foreground"
+                  }
+                >
+                  {TOOL_LABELS[step.tool] ?? step.tool}
+                  {step.ok === false ? " — needed a fix" : ""}
+                </p>
+                <p className="mt-0.5 max-w-[60ch] text-caption text-muted">
+                  {step.detail}
+                </p>
+              </li>
+            );
+          })}
         </ol>
       </motion.div>
     </div>

@@ -72,12 +72,12 @@ export function ChartCard({ chart, rows, columns }: ChartCardProps) {
 
   if (chart.chart_type === "table") {
     return (
-      <div className="mt-4 overflow-x-auto rounded-lg border border-border">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-surface-2 text-muted">
+      <div className="mt-2 overflow-x-auto">
+        <table className="min-w-full text-left text-caption">
+          <thead className="text-muted">
             <tr>
               {columns.map((c) => (
-                <th key={c} className="px-3 py-2 font-medium">
+                <th key={c} className="py-2 pr-4 font-medium">
                   {c}
                 </th>
               ))}
@@ -87,7 +87,7 @@ export function ChartCard({ chart, rows, columns }: ChartCardProps) {
             {rows.slice(0, 50).map((row, i) => (
               <tr key={i} className="border-t border-border">
                 {columns.map((c) => (
-                  <td key={c} className="px-3 py-2 tabular-nums">
+                  <td key={c} className="py-2 pr-4 tabular-nums text-foreground">
                     {String(row[c] ?? "")}
                   </td>
                 ))}
@@ -105,7 +105,7 @@ export function ChartCard({ chart, rows, columns }: ChartCardProps) {
     const x = String(chart.config.x);
     const y = String(chart.config.y);
     return (
-      <div className="mt-4 h-64 w-full">
+      <div className="mt-2 h-60 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid stroke={BORDER} strokeDasharray="3 3" vertical={false} />
@@ -141,7 +141,7 @@ export function ChartCard({ chart, rows, columns }: ChartCardProps) {
     const y = String(chart.config.y);
     const horizontal = chart.config.orientation === "horizontal";
     return (
-      <div className="mt-4 h-64 w-full">
+      <div className="mt-2 h-60 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}

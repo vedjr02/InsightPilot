@@ -17,7 +17,8 @@ export function ThemeToggle() {
 
   useEffect(() => {
     const stored = window.localStorage.getItem("ip-theme") as Theme | null;
-    const initial = stored === "light" || stored === "dark" ? stored : getSystemTheme();
+    const initial =
+      stored === "light" || stored === "dark" ? stored : getSystemTheme();
     setTheme(initial);
     document.documentElement.dataset.theme = initial;
     setReady(true);
@@ -30,25 +31,13 @@ export function ThemeToggle() {
     window.localStorage.setItem("ip-theme", next);
   }
 
-  if (!ready) {
-    return (
-      <button
-        type="button"
-        aria-label="Toggle color theme"
-        className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted"
-        disabled
-      >
-        Theme
-      </button>
-    );
-  }
-
   return (
     <button
       type="button"
       onClick={toggle}
+      disabled={!ready}
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-      className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-foreground transition-colors hover:bg-surface-2"
+      className="text-caption text-muted transition-colors hover:text-foreground disabled:opacity-40"
     >
       {theme === "dark" ? "Light" : "Dark"}
     </button>

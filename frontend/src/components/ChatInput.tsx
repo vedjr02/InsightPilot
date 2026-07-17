@@ -4,8 +4,8 @@ import { type FormEvent, useEffect, useState } from "react";
 
 const PLACEHOLDERS = [
   "Why did revenue dip in March?",
-  "Which segment churns the most?",
-  "Show me the trend for signups…",
+  "Which segment returns the most?",
+  "Show the monthly revenue trend…",
   "What are the top categories by volume?",
 ];
 
@@ -31,7 +31,7 @@ export function ChatInput({
     if (value.trim()) return;
     const id = window.setInterval(() => {
       setPhIndex((i) => (i + 1) % PLACEHOLDERS.length);
-    }, 4000);
+    }, 4500);
     return () => window.clearInterval(id);
   }, [value]);
 
@@ -44,17 +44,14 @@ export function ChatInput({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="border-t border-border bg-surface px-4 py-4 sm:px-6"
-    >
-      <div className="mx-auto flex max-w-chat items-end gap-2">
+    <form onSubmit={handleSubmit} className="px-4 pb-5 pt-2 sm:px-6">
+      <div className="mx-auto max-w-chat rounded-lg border border-border bg-surface p-2 shadow-md transition-shadow focus-within:border-border-strong focus-within:shadow-md">
         <label className="sr-only" htmlFor="chat-input">
-          Ask a question
+          Ask a question about your data
         </label>
         <textarea
           id="chat-input"
-          rows={1}
+          rows={2}
           value={value}
           disabled={disabled}
           placeholder={PLACEHOLDERS[phIndex]}
@@ -65,15 +62,18 @@ export function ChatInput({
               handleSubmit(e);
             }
           }}
-          className="min-h-[48px] flex-1 resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted shadow-sm transition-shadow focus:border-accent focus:shadow-md disabled:opacity-50"
+          className="min-h-[3.25rem] w-full resize-none bg-transparent px-3 py-2.5 text-chat-body text-foreground placeholder:text-muted/80 focus:outline-none disabled:opacity-50"
         />
-        <button
-          type="submit"
-          disabled={disabled || !value.trim()}
-          className="h-12 shrink-0 rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Ask
-        </button>
+        <div className="flex items-center justify-between gap-3 px-2 pb-1">
+          <p className="caption text-caption text-muted">Enter to ask</p>
+          <button
+            type="submit"
+            disabled={disabled || !value.trim()}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover active:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Ask
+          </button>
+        </div>
       </div>
     </form>
   );

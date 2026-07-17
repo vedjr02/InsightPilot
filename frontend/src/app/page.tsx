@@ -126,17 +126,17 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-chat items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div>
-            <p className="text-base font-medium tracking-tight text-foreground">
+      <header className="sticky top-0 z-10 border-b border-border bg-background">
+        <div className="mx-auto flex max-w-chat items-center justify-between gap-4 px-4 py-4 sm:px-6">
+          <div className="min-w-0">
+            <p className="font-display text-lg font-semibold tracking-tight text-foreground">
               InsightPilot
             </p>
-            <p className="text-xs text-muted">
-              {dataset ? dataset.name : "Autonomous business analyst"}
-            </p>
+            {dataset && (
+              <p className="truncate text-caption text-muted">{dataset.name}</p>
+            )}
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex shrink-0 items-center gap-4">
             <ThemeToggle />
             <DatasetPicker
               hasDataset={Boolean(dataset)}
@@ -151,29 +151,39 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-chat flex-1 flex-col px-4 py-6 sm:px-6">
-        {booting && <p className="text-sm text-muted">Loading dataset…</p>}
+      <main className="mx-auto flex w-full max-w-chat flex-1 flex-col px-4 pb-4 pt-10 sm:px-6">
+        {booting && (
+          <p className="text-caption text-muted">Loading dataset…</p>
+        )}
 
         {!booting && bootError && !dataset && (
-          <div className="rounded-lg border border-border bg-surface p-5">
-            <p className="text-sm text-danger">{bootError}</p>
-            <p className="mt-2 text-sm text-muted">
-              Start the API, or upload a CSV to continue.
+          <div className="space-y-2">
+            <p className="text-chat-body text-danger">{bootError}</p>
+            <p className="text-caption text-muted">
+              The API may be waking up — wait a moment, or upload a CSV.
             </p>
           </div>
         )}
 
         {showEmpty && (
-          <div className="space-y-8">
-            <div>
-              <p className="mb-3 text-sm text-muted">
-                What’s in this data — ask anything about it.
+          <div className="flex flex-1 flex-col justify-center gap-10 pb-8">
+            <div className="space-y-3">
+              <h1 className="font-display text-display text-foreground">
+                InsightPilot
+              </h1>
+              <p className="max-w-[36ch] text-chat-body text-muted">
+                Ask a business question. I’ll query the data, show my work, and
+                answer in plain English.
               </p>
-              <ProfileSummary dataset={dataset} />
             </div>
+
+            <ProfileSummary dataset={dataset} />
+
             <div>
-              <p className="mb-3 text-sm text-muted">Try asking</p>
-              <div className="flex flex-col gap-2">
+              <p className="mb-1 text-caption uppercase tracking-wider text-muted">
+                Try asking
+              </p>
+              <div className="divide-y divide-border">
                 {EXAMPLE_QUESTIONS.map((q) => (
                   <ExampleQuestionChip
                     key={q}
@@ -187,7 +197,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-8">
           {messages.map((m) =>
             m.role === "user" ? (
               <ChatBubble key={m.id} role="user" content={m.content} />
@@ -209,7 +219,7 @@ export default function Home() {
       </main>
 
       {dataset && (
-        <div className="sticky bottom-0">
+        <div className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent pt-4">
           <ChatInput
             onSend={(q) => void sendQuestion(q)}
             disabled={busy || !dataset}

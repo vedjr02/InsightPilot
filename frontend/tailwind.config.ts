@@ -34,14 +34,21 @@ const config: Config = {
         md: "var(--shadow-md)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       maxWidth: {
-        chat: "42rem",
+        chat: "40rem",
       },
       fontSize: {
-        "chat-body": ["1rem", { lineHeight: "1.6" }],
+        display: ["2.25rem", { lineHeight: "1.15", letterSpacing: "-0.03em" }],
+        title: ["1.25rem", { lineHeight: "1.3", letterSpacing: "-0.02em" }],
+        "chat-body": ["1.0625rem", { lineHeight: "1.65" }],
+        caption: ["0.8125rem", { lineHeight: "1.4" }],
+      },
+      spacing: {
+        18: "4.5rem",
       },
     },
   },

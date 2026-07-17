@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 type ThinkingIndicatorProps = {
   status: string;
@@ -11,21 +11,32 @@ export function ThinkingIndicator({ status }: ThinkingIndicatorProps) {
 
   return (
     <div
-      className="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 text-sm text-muted"
+      className="flex items-baseline gap-3 py-2"
       role="status"
       aria-live="polite"
     >
-      <span className="relative flex h-2 w-2">
+      <span className="relative mt-1.5 flex h-1.5 w-1.5 shrink-0">
         {!reduce && (
           <motion.span
-            className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60"
-            animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
+            className="absolute inset-0 rounded-full bg-accent"
+            animate={{ opacity: [0.35, 1, 0.35], scale: [1, 1.35, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
           />
         )}
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+        <span className="relative h-1.5 w-1.5 rounded-full bg-accent" />
       </span>
-      <span className="text-foreground">{status}</span>
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={status}
+          initial={reduce ? false : { opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? undefined : { opacity: 0, y: -4 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="font-display text-title text-foreground"
+        >
+          {status}
+        </motion.p>
+      </AnimatePresence>
     </div>
   );
 }
