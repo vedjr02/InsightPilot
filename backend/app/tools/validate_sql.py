@@ -91,7 +91,7 @@ def validate_sql(
                 "sql": cleaned,
             }
 
-    # Column allowlist — skip SQL keywords / aliases heuristically
+    # Column allowlist — skip SQL keywords / functions / aliases
     _SQL_WORDS = {
         "select",
         "from",
@@ -156,35 +156,35 @@ def validate_sql(
         "month",
         "year",
         "day",
+        "float",
+        "filter",
+        "rows",
+        "range",
+        "unbounded",
+        "preceding",
+        "following",
+        "current",
+        "row",
+        "percentile_cont",
+        "stddev",
+        "variance",
+        "abs",
+        "ceil",
+        "floor",
+        "greatest",
+        "least",
+        "nullif",
+        "table",
+        "lateral",
         table_name.lower(),
     }
-    # Identifiers that look like columns (not string literals / numbers)
-    candidates = set(
-        re.findall(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\b", cleaned)
-    )
-    unknown = []
-    for tok in candidates:
-        low = tok.lower()
-        if low in _SQL_WORDS:
-            continue
-        if low in allowed_columns:
-            continue
-        # Likely an alias or CTE name — allow if defined with AS alias pattern later
-        # For safety, only reject tokens that appear in contexts suggesting columns
-        # and are clearly not aliases: if token matches a known bad pattern skip soft
-        unknown.append(tok)
 
-    # Soft column check: only fail if an unknown token matches nothing we can
-    # explain as alias. Aliases are hard; we reject only when a token is used
-    # that looks like a misspelled known column (edit distance) — keep strict:
-    # reject unknown identifiers that aren't aliases introduced via AS.
     aliases = {
         m.group(1).lower()
         for m in re.finditer(
             r"\bAS\s+([a-zA-Z_][a-zA-Z0-9_]*)", cleaned, flags=re.IGNORECASE
         )
     }
-    # Also bare alias forms: expr alias (hard); stick to AS aliases + CTE names
     cte_names = {
         m.group(1).lower()
         for m in re.finditer(
@@ -195,36 +195,23 @@ def validate_sql(
     }
     allowed_extra = aliases | cte_names
 
-    bad_cols = [
-        t
-        for t in unknown
-        if t.lower() not in allowed_extra
-        and t.lower() not in allowed_columns
-        and not t.lower().startswith("col")
-    ]
-    # Filter function-like / common aggregate aliases people invent
-    # Only hard-fail when token is similar to a real column misspelling OR
-    # clearly not an alias. Practical approach for demos: hard-fail tokens that
-    # appear after WHERE/GROUP BY/ORDER BY / SELECT list and aren't allowed.
-    # Simpler reliable check used here: if any unknown token is a close miss
-    # of a column name, fail; otherwise allow (aliases).
-    strict_bad = []
-    for t in bad_cols:
-        low = t.lower()
-        if low in allowed_extra:
-            continue
-        # If it's exactly an unknown and appears as "table.col" already handled
-        # Reject if it looks like a column reference people would use from schema
-        # but isn't in schema — e.g. common mistakes
-        if any(_similar(low, c) for c in allowed_columns):
-            strict_bad.append(t)
+    # Strip string literals so their contents aren't treated as identifiers
+    scrubbed = re.sub(r"'([^']|'')*'", "''", cleaned)
+    candidates = set(re.findall(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\b", scrubbed))
 
-    if strict_bad:
+    bad_cols = []
+    for tok in candidates:
+        low = tok.lower()
+        if low in _SQL_WORDS or low in allowed_columns or low in allowed_extra:
+            continue
+        bad_cols.append(tok)
+
+    if bad_cols:
         return {
             "ok": False,
             "error": (
                 "Unknown column(s) not in profiled schema: "
-                + ", ".join(sorted(set(strict_bad)))
+                + ", ".join(sorted(set(bad_cols)))
             ),
             "sql": cleaned,
         }
@@ -237,18 +224,6 @@ def validate_sql(
         "row_limit": row_limit,
         "table_name": table_name,
     }
-
-
-def _similar(a: str, b: str) -> bool:
-    """True if a looks like a typo of b (same length ±1, few edits) — cheap check."""
-    if a == b:
-        return False
-    if abs(len(a) - len(b)) > 2:
-        return False
-    # Shared prefix heuristic for misspellings like reveue / revenue
-    if len(a) >= 4 and (a[:3] == b[:3] or a[-3:] == b[-3:]):
-        return True
-    return False
 
 
 def _ensure_limit(sql: str, row_limit: int) -> str:
