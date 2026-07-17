@@ -44,8 +44,8 @@ export function ChatInput({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="px-4 pb-5 pt-2 sm:px-6">
-      <div className="mx-auto max-w-chat rounded-lg border border-border bg-surface p-2 shadow-md transition-shadow focus-within:border-border-strong focus-within:shadow-md">
+    <form onSubmit={handleSubmit} className="px-6 pb-6 pt-2 lg:px-10">
+      <div className="mx-auto max-w-chat rounded-lg border border-border bg-surface/95 p-2 shadow-md transition-shadow focus-within:border-border-strong">
         <label className="sr-only" htmlFor="chat-input">
           Ask a question about your data
         </label>

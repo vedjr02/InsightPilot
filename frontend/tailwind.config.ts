@@ -39,10 +39,14 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       maxWidth: {
-        chat: "40rem",
+        chat: "48rem",
+        shell: "72rem",
       },
       fontSize: {
-        display: ["2.25rem", { lineHeight: "1.15", letterSpacing: "-0.03em" }],
+        display: [
+          "clamp(2.25rem, 4vw, 3.25rem)",
+          { lineHeight: "1.1", letterSpacing: "-0.03em" },
+        ],
         title: ["1.25rem", { lineHeight: "1.3", letterSpacing: "-0.02em" }],
         "chat-body": ["1.0625rem", { lineHeight: "1.65" }],
         caption: ["0.8125rem", { lineHeight: "1.4" }],
