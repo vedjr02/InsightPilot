@@ -1,5 +1,9 @@
 """InsightPilot FastAPI application entrypoint."""
 
+from __future__ import annotations
+
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,14 +12,24 @@ from app.routes.datasets import router as datasets_router
 
 app = FastAPI(title="InsightPilot API", version="0.1.0")
 
-# Allow the Next.js frontend (local + Vercel) to call the API during Phase 0+.
-# Origins can be tightened once deployment URLs are fixed.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+
+def _cors_origins() -> list[str]:
+    """Local defaults plus any comma-separated CORS_ORIGINS from env (Vercel URL)."""
+    origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-    ],
+    ]
+    extra = os.getenv("CORS_ORIGINS", "")
+    for part in extra.split(","):
+        origin = part.strip().rstrip("/")
+        if origin and origin not in origins:
+            origins.append(origin)
+    return origins
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,0 +1,22 @@
+# Render Blueprint — InsightPilot FastAPI backend (free tier)
+services:
+  - type: web
+    name: insightpilot-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_READONLY_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-flash-lite-latest
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11"
