@@ -1,5 +1,7 @@
 "use client";
 
+import { Badge, Card, Flex, Text, Title } from "@tremor/react";
+
 import type { Dataset } from "@/lib/api";
 
 type ProfileSummaryProps = {
@@ -21,25 +23,39 @@ export function ProfileSummary({ dataset }: ProfileSummaryProps) {
   const cols = dataset.profile?.columns ?? [];
 
   return (
-    <section aria-label="Dataset profile" className="space-y-4">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="font-display text-title text-foreground">
-          {dataset.name}
-        </h2>
-        <p className="text-caption tabular-nums text-muted">
-          {dataset.row_count.toLocaleString()} rows · {cols.length} fields
-          {dataset.source === "demo" ? " · demo" : ""}
-        </p>
-      </div>
+    <Card
+      aria-label="Dataset profile"
+      className="!bg-tremor-background/90 !ring-tremor-ring dark:!bg-dark-tremor-background/90 dark:!ring-dark-tremor-ring"
+    >
+      <Flex alignItems="start" className="gap-3">
+        <div className="min-w-0 flex-1">
+          <Title className="!font-display !text-foreground">
+            {dataset.name}
+          </Title>
+          <Text className="mt-1 tabular-nums">
+            {dataset.row_count.toLocaleString()} rows · {cols.length} fields
+          </Text>
+        </div>
+        {dataset.source === "demo" && (
+          <Badge color="teal" size="xs">
+            Demo
+          </Badge>
+        )}
+      </Flex>
 
-      <ul className="flex flex-wrap gap-x-5 gap-y-2 border-y border-border py-3">
+      <div className="mt-5 flex flex-wrap gap-2">
         {cols.map((col) => (
-          <li key={col.name} className="text-caption">
-            <span className="text-foreground">{col.name}</span>
-            <span className="text-muted"> · {formatType(col.type)}</span>
-          </li>
+          <Badge
+            key={col.name}
+            color="stone"
+            size="sm"
+            className="!font-normal"
+          >
+            {col.name}
+            <span className="opacity-60"> · {formatType(col.type)}</span>
+          </Badge>
         ))}
-      </ul>
-    </section>
+      </div>
+    </Card>
   );
 }
