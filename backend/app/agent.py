@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from app.intent import chat_reply, classify_intent
 from app.tools.choose_chart_type import choose_chart_type
 from app.tools.execute_query import execute_query
 from app.tools.generate_sql import generate_sql
@@ -36,6 +37,42 @@ def run_agent(
     def add_trace(tool: str, detail: str, **extra: Any) -> None:
         step = {"tool": tool, "detail": detail, **extra}
         trace.append(step)
+
+    # 0. Intent gate — greetings must not invent SQL/charts
+    if classify_intent(question) == "chat":
+        status("Replying…")
+        dataset_name = None
+        try:
+            profile = profile_data(dataset_id)
+            dataset_name = profile.get("name")
+        except Exception:  # noqa: BLE001
+            pass
+
+        reply = chat_reply(question, dataset_name)
+        add_trace(
+            "intent",
+            "Treated as conversation (not a data question) — skipped SQL.",
+            intent="chat",
+        )
+        status("Done")
+        return {
+            "ok": True,
+            "question": question,
+            "dataset_id": dataset_id,
+            "insight": reply,
+            "empty_result": False,
+            "chart": {
+                "chart_type": "empty",
+                "config": {},
+                "reason": "Conversational reply — no chart",
+            },
+            "sql": None,
+            "columns": [],
+            "rows": [],
+            "row_count": 0,
+            "trace": trace,
+            "attempts": 0,
+        }
 
     # 1. Profile
     status("Profiling data…")
