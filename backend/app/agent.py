@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from app.intent import chat_reply, classify_intent
+from app.intent import (
+    chat_reply,
+    classify_intent,
+    refuse_reply,
+    schema_terms_from_profile,
+)
 from app.tools.choose_chart_type import choose_chart_type
 from app.tools.execute_query import execute_query
 from app.tools.generate_sql import generate_sql
@@ -15,6 +20,34 @@ from app.tools.write_insight import write_insight
 StatusCallback = Callable[[str], None]
 
 MAX_SQL_ATTEMPTS = 3
+
+
+def _text_only_response(
+    question: str,
+    dataset_id: str,
+    reply: str,
+    trace: list[dict[str, Any]],
+    *,
+    chart_reason: str,
+) -> dict[str, Any]:
+    return {
+        "ok": True,
+        "question": question,
+        "dataset_id": dataset_id,
+        "insight": reply,
+        "empty_result": False,
+        "chart": {
+            "chart_type": "empty",
+            "config": {},
+            "reason": chart_reason,
+        },
+        "sql": None,
+        "columns": [],
+        "rows": [],
+        "row_count": 0,
+        "trace": trace,
+        "attempts": 0,
+    }
 
 
 def run_agent(
@@ -38,43 +71,7 @@ def run_agent(
         step = {"tool": tool, "detail": detail, **extra}
         trace.append(step)
 
-    # 0. Intent gate — greetings must not invent SQL/charts
-    if classify_intent(question) == "chat":
-        status("Replying…")
-        dataset_name = None
-        try:
-            profile = profile_data(dataset_id)
-            dataset_name = profile.get("name")
-        except Exception:  # noqa: BLE001
-            pass
-
-        reply = chat_reply(question, dataset_name)
-        add_trace(
-            "intent",
-            "Treated as conversation (not a data question) — skipped SQL.",
-            intent="chat",
-        )
-        status("Done")
-        return {
-            "ok": True,
-            "question": question,
-            "dataset_id": dataset_id,
-            "insight": reply,
-            "empty_result": False,
-            "chart": {
-                "chart_type": "empty",
-                "config": {},
-                "reason": "Conversational reply — no chart",
-            },
-            "sql": None,
-            "columns": [],
-            "rows": [],
-            "row_count": 0,
-            "trace": trace,
-            "attempts": 0,
-        }
-
-    # 1. Profile
+    # 0. Profile early — schema-aware intent + analysis
     status("Profiling data…")
     try:
         profile = profile_data(dataset_id)
@@ -84,6 +81,47 @@ def run_agent(
             f"I couldn’t load that dataset’s profile ({exc}).",
             trace,
         )
+
+    dataset_name = profile.get("name")
+    intent = classify_intent(
+        question,
+        schema_terms=schema_terms_from_profile(profile),
+    )
+
+    if intent == "chat":
+        status("Replying…")
+        reply = chat_reply(question, dataset_name)
+        add_trace(
+            "intent",
+            "Treated as conversation (not a data question) — skipped SQL.",
+            intent="chat",
+        )
+        status("Done")
+        return _text_only_response(
+            question,
+            dataset_id,
+            reply,
+            trace,
+            chart_reason="Conversational reply — no chart",
+        )
+
+    if intent == "off_topic":
+        status("Replying…")
+        reply = refuse_reply(dataset_name)
+        add_trace(
+            "intent",
+            "Off-topic — refused; only dataset questions are answered.",
+            intent="off_topic",
+        )
+        status("Done")
+        return _text_only_response(
+            question,
+            dataset_id,
+            reply,
+            trace,
+            chart_reason="Off-topic — no chart",
+        )
+
     add_trace(
         "profile_data",
         profile["summary"],
