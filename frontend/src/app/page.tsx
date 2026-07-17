@@ -8,6 +8,7 @@ import { DatasetPicker } from "@/components/DatasetPicker";
 import { ErrorBubble } from "@/components/ErrorBubble";
 import { ExampleQuestionChip } from "@/components/ExampleQuestionChip";
 import { ProfileSummary } from "@/components/ProfileSummary";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { askStream } from "@/lib/ask";
 import {
@@ -135,15 +136,18 @@ export default function Home() {
               {dataset ? dataset.name : "Autonomous business analyst"}
             </p>
           </div>
-          <DatasetPicker
-            hasDataset={Boolean(dataset)}
-            onSelectDemo={async () => {
-              await loadDemo();
-              setMessages([]);
-            }}
-            onUploaded={handleUpload}
-            busy={booting || busy}
-          />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <ThemeToggle />
+            <DatasetPicker
+              hasDataset={Boolean(dataset)}
+              onSelectDemo={async () => {
+                await loadDemo();
+                setMessages([]);
+              }}
+              onUploaded={handleUpload}
+              busy={booting || busy}
+            />
+          </div>
         </div>
       </header>
 

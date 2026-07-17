@@ -137,6 +137,18 @@ def run_agent(
             sql=None,
         )
 
+    # Treat all-null single-metric results as empty for UX
+    if (
+        result["row_count"] == 1
+        and len(result["columns"]) == 1
+        and result["rows"][0].get(result["columns"][0]) is None
+    ):
+        result = {
+            **result,
+            "rows": [],
+            "row_count": 0,
+        }
+
     # 5. Chart
     status("Choosing chart…")
     chart = choose_chart_type(question, result["columns"], result["rows"])
@@ -158,7 +170,7 @@ def run_agent(
         "question": question,
         "dataset_id": dataset_id,
         "insight": insight["insight"],
-        "empty_result": bool(insight.get("empty")),
+        "empty_result": bool(insight.get("empty")) or result["row_count"] == 0,
         "chart": chart,
         "sql": sql_final,
         "columns": result["columns"],

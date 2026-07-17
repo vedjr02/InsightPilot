@@ -60,7 +60,13 @@ export function ReasoningTrace({
         <ol className="mt-2 space-y-2 border-l border-border pl-4">
           {steps.map((step, i) => (
             <li key={`${step.tool}-${i}`} className="text-sm">
-              <p className="font-medium text-foreground">
+              <p
+                className={
+                  step.tool === "self_correct"
+                    ? "font-medium text-accent"
+                    : "font-medium text-foreground"
+                }
+              >
                 {TOOL_LABELS[step.tool] ?? step.tool}
                 {step.ok === false ? " — needed a fix" : ""}
               </p>
