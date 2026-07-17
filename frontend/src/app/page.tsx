@@ -40,6 +40,7 @@ export default function Home() {
   const [booting, setBooting] = useState(true);
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLElement>(null);
 
   const loadDemo = useCallback(async () => {
     const ds = await fetchDemoDataset();
@@ -70,7 +71,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, thinking]);
 
   async function handleUpload(file: File) {
@@ -128,18 +129,21 @@ export default function Home() {
   const inConversation = messages.length > 0 || Boolean(thinking);
 
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className="relative flex h-dvh flex-col overflow-hidden">
       <RibbonsBackdrop active={!inConversation || booting} />
 
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="sticky top-0 z-20 border-b border-border/80 bg-background/85">
-          <div className="mx-auto flex w-full max-w-shell items-center justify-between gap-4 px-6 py-4 lg:px-10">
+      <div className="relative z-10 flex h-dvh min-h-0 flex-col">
+        {/* Fixed header — never overlaps scroll content */}
+        <header className="shrink-0 border-b border-border/80 bg-background/90">
+          <div className="mx-auto flex h-14 w-full max-w-shell items-center justify-between gap-4 px-6 lg:px-10">
             <div className="min-w-0">
-              <p className="font-display text-lg font-semibold tracking-tight text-foreground">
+              <p className="font-display text-[15px] font-semibold tracking-tight text-foreground">
                 InsightPilot
               </p>
               {dataset && (
-                <p className="truncate text-caption text-muted">{dataset.name}</p>
+                <p className="truncate text-[11px] leading-tight text-muted">
+                  {dataset.name}
+                </p>
               )}
             </div>
             <div className="flex shrink-0 items-center gap-4">
@@ -157,87 +161,92 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="mx-auto flex w-full max-w-shell flex-1 flex-col px-6 pb-6 pt-8 lg:px-10 lg:pt-12">
-          {booting && <BootLoader />}
+        {/* Scrollable middle — only this region scrolls */}
+        <main
+          ref={scrollRef}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        >
+          <div className="mx-auto flex min-h-full w-full max-w-shell flex-col px-6 py-8 lg:px-10 lg:py-10">
+            {booting && <BootLoader />}
 
-          {!booting && bootError && !dataset && (
-            <div className="flex flex-1 flex-col items-center justify-center text-center">
-              <p className="max-w-md text-chat-body text-danger">{bootError}</p>
-              <p className="mt-2 max-w-md text-caption text-muted">
-                The API may be waking up — wait a moment, or upload a CSV.
-              </p>
-            </div>
-          )}
+            {!booting && bootError && !dataset && (
+              <div className="flex flex-1 flex-col items-center justify-center text-center">
+                <p className="max-w-md text-chat-body text-danger">{bootError}</p>
+                <p className="mt-2 max-w-md text-caption text-muted">
+                  The API may be waking up — wait a moment, or upload a CSV.
+                </p>
+              </div>
+            )}
 
-          {showEmpty && (
-            <div className="mx-auto grid w-full max-w-shell flex-1 grid-cols-1 content-center gap-12 py-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:py-12">
-              <div className="space-y-8">
-                <div className="space-y-4">
-                  <h1 className="font-display text-display text-foreground">
-                    InsightPilot
-                  </h1>
-                  <p className="max-w-[42ch] text-chat-body text-muted">
-                    Ask a business question. I’ll query the data, show my work,
-                    and answer in plain English.
-                  </p>
-                </div>
+            {showEmpty && (
+              <div className="mx-auto grid w-full max-w-shell flex-1 grid-cols-1 content-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <h1 className="font-display text-display text-foreground">
+                      InsightPilot
+                    </h1>
+                    <p className="max-w-[42ch] text-chat-body text-muted">
+                      Ask a business question. I’ll query the data, show my
+                      work, and answer in plain English.
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="mb-2 text-caption uppercase tracking-wider text-muted">
-                    Try asking
-                  </p>
-                  <div className="divide-y divide-border">
-                    {EXAMPLE_QUESTIONS.map((q) => (
-                      <ExampleQuestionChip
-                        key={q}
-                        question={q}
-                        disabled={busy}
-                        onSelect={(question) => void sendQuestion(question)}
-                      />
-                    ))}
+                  <div>
+                    <p className="mb-2 text-caption uppercase tracking-wider text-muted">
+                      Try asking
+                    </p>
+                    <div className="divide-y divide-border">
+                      {EXAMPLE_QUESTIONS.map((q) => (
+                        <ExampleQuestionChip
+                          key={q}
+                          question={q}
+                          disabled={busy}
+                          onSelect={(question) => void sendQuestion(question)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="lg:pt-2">
-                <ProfileSummary dataset={dataset} />
+                <div className="lg:pt-2">
+                  <ProfileSummary dataset={dataset} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {inConversation && (
-            <div className="mx-auto flex w-full max-w-chat flex-col gap-8 py-2">
-              {messages.map((m) =>
-                m.role === "user" ? (
-                  <ChatBubble key={m.id} role="user" content={m.content} />
-                ) : m.error && !m.result ? (
-                  <ErrorBubble key={m.id} message={m.content} />
-                ) : (
-                  <ChatBubble
-                    key={m.id}
-                    role="assistant"
-                    content={m.content}
-                    result={m.result}
-                    error={m.error}
-                  />
-                )
-              )}
-              {thinking && <ThinkingIndicator status={thinking} />}
-              <div ref={bottomRef} />
-            </div>
-          )}
+            {inConversation && (
+              <div className="mx-auto flex w-full max-w-chat flex-col gap-10 pb-4">
+                {messages.map((m) =>
+                  m.role === "user" ? (
+                    <ChatBubble key={m.id} role="user" content={m.content} />
+                  ) : m.error && !m.result ? (
+                    <ErrorBubble key={m.id} message={m.content} />
+                  ) : (
+                    <ChatBubble
+                      key={m.id}
+                      role="assistant"
+                      content={m.content}
+                      result={m.result}
+                      error={m.error}
+                    />
+                  )
+                )}
+                {thinking && <ThinkingIndicator status={thinking} />}
+                <div ref={bottomRef} className="h-2 shrink-0" />
+              </div>
+            )}
+          </div>
         </main>
 
+        {/* Fixed composer — sits below scroll region, never covers content */}
         {dataset && (
-          <div className="sticky bottom-0 z-20 bg-gradient-to-t from-background via-background to-transparent pt-4">
-            <div className="mx-auto w-full max-w-shell">
-              <ChatInput
-                onSend={(q) => void sendQuestion(q)}
-                disabled={busy || !dataset}
-                initialValue={draft}
-              />
-            </div>
-          </div>
+          <footer className="shrink-0 border-t border-border/60 bg-background/95">
+            <ChatInput
+              onSend={(q) => void sendQuestion(q)}
+              disabled={busy || !dataset}
+              initialValue={draft}
+            />
+          </footer>
         )}
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 
 import type { TraceStep } from "@/lib/types";
 
@@ -22,21 +22,11 @@ const TOOL_LABELS: Record<string, string> = {
 
 export function ReasoningTrace({
   steps,
-  defaultOpen,
+  defaultOpen = false,
 }: ReasoningTraceProps) {
   const panelId = useId();
   const reduce = useReducedMotion();
-  const [open, setOpen] = useState(false);
-
-  // Collapse by default on small screens
-  useEffect(() => {
-    if (typeof defaultOpen === "boolean") {
-      setOpen(defaultOpen);
-      return;
-    }
-    const mq = window.matchMedia("(min-width: 640px)");
-    setOpen(mq.matches);
-  }, [defaultOpen]);
+  const [open, setOpen] = useState(defaultOpen);
 
   if (!steps.length) return null;
 
